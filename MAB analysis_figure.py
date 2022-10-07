@@ -121,7 +121,6 @@ for i in range(len(sleep_light)):
                         ((sleep_light[i][j - 3] < 0.2 * sleep_light[i][j]) & (sleep_light[i][j + 3] < 0.2 * sleep_light[i][j])) or\
                         ((sleep_light[i][j - 3] > light_th) & (sleep_light[i][j + 3] < max(0.3 * sleep_light[i][j],light_min))) or\
                         ((sleep_light[i][j + 3] > light_th) & (sleep_light[i][j - 3] < max(0.3 * sleep_light[i][j],light_min))):
-                    print(sleep_light[i].index[j])
                     exc.append(sleep_num[i].index[j])
                     sleep_num_exc1[i][j]=0
                     sleep_num_exc1[i][j -1] = 0
@@ -202,7 +201,6 @@ for i in range(len(rebinper0) - 1):
         else:
             if (i - j) < 5:
                 rebinper0[j + 1:i + 1] = [0 for x in range(i - j)]
-                print(i, j)
 
 # scaling the list for plotting
 scbinper0 = [rebinper0[i] * max(data[s]) for i in range(len(rebinper0))]

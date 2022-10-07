@@ -331,10 +331,10 @@ class FLM2():
     def basis_functions(self):
         """The basis functions."""
         if self.__basis_functions is None:
-            print("Create first the basis functions: {}".format(
-                    self.__basis
-                )
-            )
+            # print("Create first the basis functions: {}".format(
+            #         self.__basis
+            #     )
+            # )
             self.__create_basis_functions(self.nsamples)
         return self.__basis_functions
 
