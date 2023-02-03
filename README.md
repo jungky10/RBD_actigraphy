@@ -20,3 +20,11 @@ Total mean duration:  0 days 00:15:26.153846153
 Total mean interval:  0 days 01:33:36.226415094
 Total mean number of active block:  2.79
 ```
+
+## Code description
+### MAB analysis
+main analysis code
+### MAB analysis_figure
+code that produces graphics illustrating the analysis's methodology and outcomes using a single night sample data
+### FLM_func
+modified module to apply functional linear modeling to sleep part of actigraphy data
