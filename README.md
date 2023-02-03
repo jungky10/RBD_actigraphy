@@ -28,3 +28,7 @@ main analysis code
 code that produces graphics illustrating the analysis's methodology and outcomes using a single night sample data
 ### FLM_func
 modified module to apply functional linear modeling to sleep part of actigraphy data
+
+## Example plot
+### All in one plot
+<img src="./all_in_one.png">
