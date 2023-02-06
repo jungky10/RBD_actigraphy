@@ -1,25 +1,10 @@
 ## RBD_actigraphy
+
 This is an analysis that evaluates motor activities during sleep.  
 This analysis do not evaluate motor activities in epoch units, but quantify them as a continuous block.  
-You can visualize motor activity block (MAB) on the raw accelerometer data and get 4 evaluation indices that provides characteristics of motor activity during sleep.  
-
-You can get the daily and summary reports in the results
-
-```
-### Motor Activity Block summary for sleep 14  
-Inactive %:  89 %  
-Mean duration:  0 days 00:19:00  
-Mean interval:  0 days 01:46:00  
-Mean number of blocks:  2  
-```
-
-```
-Average MAB indices over 14 days  
-Mean inactive %:  89 %  
-Mean duration:  0 days 00:15:26  
-Mean interval:  0 days 01:33:36  
-Mean number of blocks:  2.79  
-```
+You can visualize motor activity block (MAB) on the raw accelerometer data and get 4 evaluation indices that provides characteristics of motor activity during sleep.    
+These code works with a csv file extracted from 'Actiwatch Spectrum PRO, Philips Respironics, Murrysville, PA, USA'  
+'pyActigraphy' package was used together with this code for analysis
 
 ## Code description
 ### MAB analysis
@@ -76,6 +61,24 @@ Mean duration:  0 days 00:20:30
 Mean interval:  0 days 02:02:40  
 Mean number of blocks:  2  
 ```
+## 
+You can get the daily and summary reports in the results
+
+```
+### Motor Activity Block summary for sleep 14  
+Inactive %:  89 %  
+Mean duration:  0 days 00:19:00  
+Mean interval:  0 days 01:46:00  
+Mean number of blocks:  2  
+```
+
+```
+Average MAB indices over 14 days  
+Mean inactive %:  89 %  
+Mean duration:  0 days 00:15:26  
+Mean interval:  0 days 01:33:36  
+Mean number of blocks:  2.79  
+```  
 ## 
 You can also get histograms for the 4 indices of MAB analysis  
 <img src="./Figure/inactive.png"
