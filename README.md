@@ -31,7 +31,7 @@ modified module to apply functional linear modeling to sleep part of actigraphy 
 
 ## Figure
 ### Analysis procedure (A single night sample data)
-<img src="./all_in_one.png">
+<img src="./Figure/all_in_one.png">
 
 <b>y axis (left)</b> : activity counts (of raw signal)   
 <b>y axis (right)</b> : the ratio of epochs with 20-100 activity counts within the 20-min window    
@@ -43,7 +43,7 @@ modified module to apply functional linear modeling to sleep part of actigraphy 
 <b>orange area</b> : the areas beyond the 20% ratio (motor activity block)  
 ## 
 ### 4 indices of motor activity block analysis
-<img src="./MAB.png"
+<img src="./Figure/MAB.png"
 style="width:640px">  
 <b>inactive %</b> : average ratio of the non-block portion during sleep  
 <b>duration</b> : average duration of the blocks during sleep  
@@ -78,11 +78,11 @@ Mean number of blocks:  2
 ```
 ## 
 You can also get histograms for the 4 indices of MAB analysis  
-<img src="./inactive.png"
+<img src="./Figure/inactive.png"
 style="width:320px">
-<img src="./duration.png"
+<img src="./Figure/duration.png"
 style="width:320px">  
-<img src="./interval.png"
+<img src="./Figure/interval.png"
 style="width:320px">
-<img src="./num_block.png"
+<img src="./Figure/num_block.png"
 style="width:320px">
