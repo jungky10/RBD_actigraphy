@@ -77,4 +77,12 @@ Mean interval:  0 days 02:02:40
 Mean number of blocks:  2  
 ```
 ## 
-You can also get histograms for the 4 indices of MAB analysis
+You can also get histograms for the 4 indices of MAB analysis  
+<img src="./inactive.png"
+style="width:320px">
+<img src="./duration.png"
+style="width:320px">  
+<img src="./interval.png"
+style="width:320px">
+<img src="./num_block.png"
+style="width:320px">
