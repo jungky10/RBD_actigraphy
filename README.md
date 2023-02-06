@@ -41,3 +41,11 @@ modified module to apply functional linear modeling to sleep part of actigraphy 
 <b>light gray line</b> : the ratio of epochs with 20-100 activity counts within the 20-min window  
 <b>dark gray line</b> : ratio smoothed with functional linear modeling   
 <b>orange area</b> : the areas beyond the 20% ratio (motor activity block)
+
+### 4 indices of motor activity block analysis
+<img src="./MAB.png"
+style="width:1000px; height:1000px;">
+<b>inactive %</b> : average ratio of the non-block portion during sleep
+<b>duration</b> : average duration of the blocks during sleep
+<b>interval %</b> : average interval of the blocks during sleep
+<b>number %</b> : average number of the blocks during sleep
