@@ -1,3 +1,13 @@
+'''
+https://github.com/jungky10/RBD_actigraphy
+
+KyoungeunPark
+miniholic98@gmail.com
+
+Ki-Young Jung
+jungky@snu.ac.kr
+'''
+
 import pyActigraphy
 import os
 import csv
@@ -20,7 +30,7 @@ raw_state = pyActigraphy.io.read_raw_rpx(fpath+filename)
 instance=filename[0:13]
 start=raw.start_time
 
-'########################### reading file ###################################################'
+'########################### reading file ###########################'
 f= open(fpath+filename, 'rt', encoding='UTF8')
 reader = csv.reader(f)
 
@@ -31,7 +41,7 @@ f.close()
 raw_sleepinfo = pd.DataFrame(csv_list)
 raw_sleepinfo = pd.DataFrame(csv_list, columns=raw_sleepinfo.loc[64, :])
 
-'####################################### masking #######################################'
+'########################### masking ###########################'
 mask = np.ones_like(raw.data)
 raw.mask=pd.Series(mask, index=raw.data.index)
 raw_state.mask=pd.Series(mask, index=raw.data.index)
@@ -41,7 +51,7 @@ nonwear =raw.data[raw.data.isna()].index
 raw.mask[nonwear]=0
 raw_state.mask[nonwear]=0
 
-'####################### extract sleep time from actiware ###################################'
+'########################### extract sleep time from actiware ###########################'
 sleep = raw_sleepinfo.loc[raw_sleepinfo["Interval Type"] == "SLEEP", ["Start Date","Start Time", "End Date","End Time"]]
 sleep.reset_index(drop=True, inplace=True)
 sleepon=[]
@@ -77,181 +87,178 @@ for i in range(len(sleepon)):
     print(i, 'sleep onset:', sleepon[i], '   sleep offset:', sleepoff[i], '    sleep time:', sleepoff[i] - sleepon[i])
 
 
-'######################################### resampling to 1 min #######################################'
+'########################### resampling to 1 min ###########################'
 i=0
 if raw.frequency==pd.Timedelta('30S') or raw.frequency==pd.Timedelta('15S'):
     raw_state1 = raw_state.resampled_data(freq='1min')
     raw1 = raw.resampled_data(freq='1min')
 
-'''######################################### sleep analysis #######################################'''
-'''###### exclude nap and analyze only sleep time ########'''
+'########################### sleep analysis ###########################'
+'########################### exclude nap and analyze only sleep time ###########################'
 
-sleep_num=[]
+sleep_act=[]
 sleep_light=[]
 
 for i in range(len(sleepon)):
+    # The analysis only included sleep that began between 8:00 PM and 4:00 AM
     if sleep.values[i][1][0:2]>= '20' or sleep.values[i][1][0:2]<='04':
-        test = pyActigraphy.io.read_raw_rpx(fpath + filename, start_time=sleepon[i],
-                                            period=sleepoff[i] - sleepon[i])
-        mask = np.ones_like(test.data)
-        test.mask = pd.Series(mask, index=test.data.index)
-        test.mask_inactivity = True
-        nonwear = test.data[test.data.isna()].index
-        test.mask[nonwear] = 0
+        temp_single_night = pyActigraphy.io.read_raw_rpx(fpath + filename, start_time=sleepon[i],
+                                                         period=sleepoff[i] - sleepon[i])
+        # masking
+        mask = np.ones_like(temp_single_night.data)
+        temp_single_night.mask = pd.Series(mask, index=temp_single_night.data.index)
+        temp_single_night.mask_inactivity = True
+        nonwear = temp_single_night.data[temp_single_night.data.isna()].index
+        temp_single_night.mask[nonwear] = 0
 
-        test1 = test.resampled_data(freq='1min')
-        light1= test.resampled_light(freq='1min')
-        sleep_num.append(test1)
-        sleep_light.append(light1)
+        single_night_act = temp_single_night.resampled_data(freq='1min')
+        single_night_light= temp_single_night.resampled_light(freq='1min')
+        sleep_act.append(single_night_act)
+        sleep_light.append(single_night_light)
 
-'############ remove activity with sudden light in sleep ############'
-
+'########################### remove activity with sudden light in sleep ###########################'
+# You can adjust these parameters
 light_th = 1.5
-light_min = 0.3
-act_min= 200
+light_baseline = 0.3
+act_min_th= 200
+act_min_th_2= 100
+act_max_th=500
 
-exc=[]
-sleep_num_exc1=copy.deepcopy(sleep_num)
+excluded_index=[]
+sleep_act_mod_ver1=copy.deepcopy(sleep_act)
 for i in range(len(sleep_light)):
-    for j in range(len(sleep_light[i])-7):
+    for j in range(len(sleep_light[i]) - 7):
         if j >=7:
-            if (sleep_light[i][j-1] + sleep_light[i][j] + sleep_light[i][j+1] > light_th) & \
-                    ((sleep_num[i][j-1]+sleep_num[i][j]+sleep_num[i][j+1]>act_min) or (sleep_num[i][j]>100)):
-                if ((sleep_light[i][j - 7] < light_min) & (sleep_light[i][j + 7] < light_min)) or \
+            if (sleep_light[i][j - 1] + sleep_light[i][j] + sleep_light[i][j + 1] > light_th) & \
+                    ((sleep_act[i][j - 1] + sleep_act[i][j] + sleep_act[i][j + 1] > act_min_th) or (sleep_act[i][j] > act_min_th_2)):
+                if ((sleep_light[i][j - 7] < light_baseline) & (sleep_light[i][j + 7] < light_baseline)) or \
                         ((sleep_light[i][j - 3] < 0.2 * sleep_light[i][j]) & (sleep_light[i][j + 3] < 0.2 * sleep_light[i][j])) or\
-                        ((sleep_light[i][j - 3] > light_th) & (sleep_light[i][j + 3] < max(0.3 * sleep_light[i][j],light_min))) or\
-                        ((sleep_light[i][j + 3] > light_th) & (sleep_light[i][j - 3] < max(0.3 * sleep_light[i][j],light_min))):
-                    exc.append(sleep_num[i].index[j])
-                    sleep_num_exc1[i][j]=0
-                    sleep_num_exc1[i][j -1] = 0
-                    sleep_num_exc1[i][j +1] = 0
+                        ((sleep_light[i][j - 3] > light_th) & (sleep_light[i][j + 3] < max(0.3 * sleep_light[i][j], light_baseline))) or\
+                        ((sleep_light[i][j + 3] > light_th) & (sleep_light[i][j - 3] < max(0.3 * sleep_light[i][j], light_baseline))):
+                    excluded_index.append(sleep_act[i].index[j])
+                    sleep_act_mod_ver1[i][j]=0
+                    sleep_act_mod_ver1[i][j - 1] = 0
+                    sleep_act_mod_ver1[i][j + 1] = 0
 
-exc2=[]
-maxth=500
+excluded_index_2=[]
 
-sleep_num_exc=copy.deepcopy(sleep_num_exc1)
-for i in range(len(sleep_num_exc1)):
-    for j in range(len(sleep_num_exc1[i])-1):
+sleep_act_mod_ver2=copy.deepcopy(sleep_act_mod_ver1)
+for i in range(len(sleep_act_mod_ver1)):
+    for j in range(len(sleep_act_mod_ver1[i]) - 1):
         if j >=1:
-            if sleep_num_exc1[i][j-1]+sleep_num_exc1[i][j]+sleep_num_exc1[i][j+1]>maxth:
-                exc2.append(sleep_num_exc1[i].index[j])
-                sleep_num_exc[i][j]=0
-                sleep_num_exc[i][j -1] = 0
-                sleep_num_exc[i][j +1] = 0
+            if sleep_act_mod_ver1[i][j - 1]+sleep_act_mod_ver1[i][j]+sleep_act_mod_ver1[i][j + 1]>act_max_th:
+                excluded_index_2.append(sleep_act_mod_ver1[i].index[j])
+                sleep_act_mod_ver2[i][j]=0
+                sleep_act_mod_ver2[i][j - 1] = 0
+                sleep_act_mod_ver2[i][j + 1] = 0
 
-'############################# active block detector #############################'
+'########################### active block detector ###########################'
 
-window=20
-th=0.2
-data=sleep_num_exc
+window_len=20  # moving average window
+block_th=0.2  # block threshold, set to 20%
+data=sleep_act_mod_ver2  # data
 rebinper0_list=[]
-ref=20
-refmax=100
+valid_act_count_min=20
+valid_act_count_max=100
 
-'you can choose the sample sleep'
-s=8
+'''you can choose the sample sleep'''
+sample_sleep_num=8 # 8th sleep
+ratio_of_epochs_with_activity = []
 
-per0 = []
-# calculate the percent of 0 count within the window
-for i in range(len(data[s]) - window):
-    a = data[s][i:i + window - 1].value_counts(normalize=True)
-    # print(a[0])
-    if a.sort_index().index[0] <= ref or a.sort_index().index[-1] >= refmax:
-        per0.append(1 - sum(a[a.index < ref]) - sum(a[a.index > refmax]))
-        # per0.append(a[0])
-    else:
-        # per0.append(1)
-        per0.append(1)
+for i in range(len(data[sample_sleep_num]) - window_len):
+    # calculate the ratio of epochs with the corresponding activity count value (20-100) in a 20-min window
+    counts_of_unique_values = data[sample_sleep_num][i:i + window_len - 1].value_counts(normalize=True)
 
-# smoothing per0 using FLM
-freq = '10min'  # dummy
-max_order = 15
+    if counts_of_unique_values.sort_index().index[0] <= valid_act_count_min or counts_of_unique_values.sort_index().index[-1] >= valid_act_count_max:
+        # if there are epochs with activity counts outside the range of 20-100 activity counts,
+        ratio_of_epochs_with_activity.append(1 - sum(counts_of_unique_values[counts_of_unique_values.index < valid_act_count_min]) - sum(counts_of_unique_values[counts_of_unique_values.index > valid_act_count_max]))
+    else:  # if all epochs in the window have an activity count between 20-100
+        ratio_of_epochs_with_activity.append(1)
+
+# smoothing ratio_of_epochs_with_activity using FLM
+freq = '10min'  # dummy value
+max_order = 15 # FLM order
 flm = FLM2(basis='fourier', sampling_freq=freq, max_order=max_order)
-flm._FLM2__nsamples = len(per0)
+flm._FLM2__nsamples = len(ratio_of_epochs_with_activity)
 X = np.stack(flm.basis_functions, axis=1)
-y = per0
+y = ratio_of_epochs_with_activity
 model = sm.OLS(y, X)
 results = model.fit()
 flm.beta['name'] = results.params
-y_est = np.dot(X, flm.beta['name'])
+y_est = np.dot(X, flm.beta['name'])  # smoothed ratio_of_epochs_with_activity
 
-# binarize the percent of 0 count, 1:sleep, 0:wake
-binper0 = copy.deepcopy(per0)
-binper0 = copy.deepcopy(list(y_est))
-for b in range(len(binper0)):
-    if binper0[b] > th:
-        binper0[b] = 1
-        # 1
+# binarize the ratio (1:sleep, 0:wake)
+binarized_ratio = copy.deepcopy(list(y_est))
+for b in range(len(binarized_ratio)):
+    if binarized_ratio[b] > block_th:  # if ration exceeds 20%
+        binarized_ratio[b] = 1
     else:
-        binper0[b] = 0
-        # 0
+        binarized_ratio[b] = 0
 
-temp1 = [binper0[0]] * (window // 2)
-temp2 = [binper0[-1]] * (window // 2)
+# align the block and data sync by attaching dummies to the front and back of the shortened data
+front_dummy = [binarized_ratio[0]] * (window_len // 2)
+back_dummy = [binarized_ratio[-1]] * (window_len // 2)
 
 # reshape the list to match the size of sleep data
-rebinper0 = temp1 + binper0 + temp2
+binarized_ratio_resized = front_dummy + binarized_ratio + back_dummy
 
-# remove <5min active block
-j = 0
-for i in range(len(rebinper0) - 1):
-    if rebinper0[i] != rebinper0[i + 1]:
-        if rebinper0[i + 1] == 1:
-            j = i  # 마지막으로 0되는 인덱스
+# remove too short (<5min) block
+start_idx = 0
+for i in range(len(binarized_ratio_resized) - 1):
+    if binarized_ratio_resized[i] != binarized_ratio_resized[i + 1]:
+        if binarized_ratio_resized[i + 1] == 1:
+            start_idx = i
         else:
-            if (i - j) < 5:
-                rebinper0[j + 1:i + 1] = [0 for x in range(i - j)]
+            if (i - start_idx) < 5:
+                binarized_ratio_resized[start_idx + 1:i + 1] = [0 for x in range(i - start_idx)]
 
-# scaling the list for plotting
-scbinper0 = [rebinper0[i] * max(data[s]) for i in range(len(rebinper0))]
+# scaling the binarized_ratio_resized for plotting
+binarized_ratio_resized_for_plotting = [binarized_ratio_resized[i] * max(data[sample_sleep_num]) for i in range(len(binarized_ratio_resized))]
 
 # find local maxima
-nper0 = np.array(per0)
-peaks, _ = find_peaks(nper0, height=0.2, distance=30)
+# arr_ratio = np.array(ratio_of_epochs_with_activity)
+# peaks, _ = find_peaks(arr_ratio, height=0.2, distance=30)
 
+# Attach dummies to the front and back of the shortened data
+dummy= int(window_len / 2) * [0]
+ratio= dummy + ratio_of_epochs_with_activity + dummy
+smoothed_ratio= dummy + list(y_est) + dummy
 
-scaled_per0=per0
-scaled_yest=list(y_est)
-dummy=int(window/2)*[0]
-
-# FLM 결과 (Y_est)에서 음수 값 0으로 변경
-# 윈도우 적용하면서 데이터 양쪽에 줄어든 만큼 더미값(0) 붙여줌(Padding 과 비슷)
-for i in range(len(scaled_yest)):
-    if scaled_yest[i]<0:
-        scaled_yest[i] = 0
-scaled_per0=dummy+scaled_per0+dummy
-scaled_yest=dummy+scaled_yest+dummy
+# Replace the negative value of the smoothed ratio to 0
+for i in range(len(smoothed_ratio)):
+    if smoothed_ratio[i]<0:
+        smoothed_ratio[i] = 0
 
 '--------------------------------------------------------------------------------'
 '------------------------------------- PLOT -------------------------------------'
 
-# all in one plot
+# process + block
 fig, ax1 = plt.subplots()
-ax1.plot(data[s].values, alpha=0.7)
-ax1.plot(scbinper0, color='C1')
-ax1.fill(scbinper0, color='peachpuff', alpha=0.5)
+ax1.plot(data[sample_sleep_num].values, alpha=0.7)
+ax1.plot(binarized_ratio_resized_for_plotting, color='C1')
+ax1.fill(binarized_ratio_resized_for_plotting, color='peachpuff', alpha=0.5)
 ax2 = ax1.twinx()
 ax2.set_ylim(-0.047,1)
-ax2.plot(scaled_per0, color='slategrey', alpha=0.3)
-ax2.plot(scaled_yest, color='slategrey')
+ax2.plot(ratio, color='slategrey', alpha=0.3)
+ax2.plot(smoothed_ratio, color='slategrey')
 
 # only process
-scaled_per0_perc=[100*i for i in scaled_per0]
-scaled_yest_perc=[100*i for i in scaled_yest]
+ratio_percentage=[100 * i for i in ratio]
+smoothed_ratio_percentage=[100 * i for i in smoothed_ratio]
 fig, ax1 = plt.subplots()
 ax1.set_ylim(-4.7,100)
-ax1.plot(scaled_per0_perc, color='green', alpha=0.5)
-ax1.plot(scaled_yest_perc, color='slategrey')
+ax1.plot(ratio_percentage, color='green', alpha=0.5)
+ax1.plot(smoothed_ratio_percentage, color='slategrey')
 plt.title('Processed and smoothed signal')
 plt.ylabel('Ratio of epochs with activity (%)', fontsize=12)
 plt.xlabel('Time (min)', fontsize=12)
-plt.axhline(y=20, linewidth=1, color='darkgreen', linestyle='--')
+plt.axhline(y=20, linewidth=1, color='darkgreen', linestyle='--')  # 20% line
 
 # only block
 fig, ax1 = plt.subplots()
-ax1.plot(data[s].values, alpha=0.7)
-ax1.plot(scbinper0, color='C1')
-ax1.fill(scbinper0, color='peachpuff', alpha=0.8)
+ax1.plot(data[sample_sleep_num].values, alpha=0.7)
+ax1.plot(binarized_ratio_resized_for_plotting, color='C1')
+ax1.fill(binarized_ratio_resized_for_plotting, color='peachpuff', alpha=0.8)
 plt.ylabel('Activity counts', fontsize=12)
 plt.xlabel('Time (min)', fontsize=12)
 
